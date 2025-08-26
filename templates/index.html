@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<head>
+    <title>Song Quiz</title>
+</head>
+<body>
+    <form action="/start-quiz" method="post">
+        <h4>Song Set</h4>
+        {{song_lists_html}}
+
+        <h4>Year Range:</h4>
+        <label for="min_year">Minimum year:</label><br>
+        <input type="text" name="min_year" value="0"><br>
+        <label for="min_year">Maximum year:</label><br>
+        <input type="text" name="max_year" value="3000"><br>
+
+        <h4>Other Options:</h4>
+        <input type="checkbox" name="repeats" value="repeats">
+        <label for="repeats"> Allow repeats?</label><br><br>
+        <button type="submit">Start Song Quiz!</button>
+    </form>
+</body>
