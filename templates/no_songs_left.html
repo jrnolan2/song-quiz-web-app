@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<head>
-    <title>Song Quiz</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title_suffix %} · Done{% endblock %}
+{% block content %}
+<div class="panel empty-state" data-animate>
     <p>No songs left!</p>
-    <br/><br/>
     <form action="/" method="get">
         <button type="submit">Return Home</button>
     </form>
-</body>
+</div>
+{% endblock %}

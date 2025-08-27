@@ -18,6 +18,8 @@ Once the web app has started with the instructions above, you'll be greeted with
 
 After selecting the options, press "Start Song Quiz!". You will get a random song from the list that satisfies your selected options. The song's title, artist, and year will displayed. A link to the music will also be included. The song quiz master should click on the link (opens in new tab) to start the music. The song quiz players will buzz in and then the song quiz master should pause the song. The player who buzzed in should immediately have the answer, if they are stalling to think then the master should disqualify them and then continue the music for someone else to buzz in.
 
+Note: The web app only allows one game at a time, don't start it in multiple tabs.
+
 ## Song list file
 All song list files should be put in a directory named `song_lists`. The format of these files is described in this section. The file should be a tab-separated value file. The first line should be a header describing the columns:
 

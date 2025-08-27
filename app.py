@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template
 import os
 import random
 
@@ -49,24 +49,20 @@ def initialize_song_lists():
 
 @app.route('/random-song', methods=['GET','POST'])
 def random_song_page():
-    """
-    Return a page with a random song from the selected list
-    """
-    # No songs left
+    """Return a page with a random song from the selected list."""
     if len(curr_song_list) == 0:
-        template_text = open('templates/no_songs_left.html').read()
-        return template_text
+        # No songs left
+        return render_template('no_songs_left.html')
 
-    # Choose random song and fill into template
     random_song = random.choice(curr_song_list)
     if not ALLOW_REPEATS:
         curr_song_list.remove(random_song)
-    template_text = open('templates/random_song.html').read()
-    return render_template_string(template_text,
-                                  song_name=random_song.name,
-                                  song_artists=random_song.artists,
-                                  song_year=random_song.year,
-                                  song_link=random_song.link)
+
+    return render_template('random_song.html',
+                           song_name=random_song.name,
+                           song_artists=random_song.artists,
+                           song_year=random_song.year,
+                           song_link=random_song.link)
 
 @app.route('/start-quiz', methods=['POST'])
 def start_quiz():
@@ -99,19 +95,10 @@ def start_quiz():
 
 @app.route('/', methods=['GET'])
 def index():
-    """
-    Send start song quiz form
-    """
-    template_text = open('templates/index.html').read()
-
-    # Add all song list files as options on the web page
-    song_lists_html = ''
-    for name in song_lists_dict:
-        human_song_title = name.replace("_"," ").title()
-        song_lists_html += f'<input type="radio" id="{name}" name="song_list" value="{name}" {"checked" if name == "radio" else ""}>\n' # radio is default selected
-        song_lists_html += f'<label for="{name}">{human_song_title}</label><br>\n'
-
-    return template_text.replace("{{song_lists_html}}",song_lists_html)
+    """Render the start song quiz form."""
+    return render_template('index.html',
+                           song_lists=sorted(song_lists_dict.keys()),
+                           default_song_list='radio')
 
 if __name__ == '__main__':
     initialize_song_lists()

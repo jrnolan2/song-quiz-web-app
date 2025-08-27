@@ -1,21 +1,46 @@
-<!DOCTYPE html>
-<head>
-    <title>Song Quiz</title>
-</head>
-<body>
-    <form action="/start-quiz" method="post">
-        <h4>Song Set</h4>
-        {{song_lists_html}}
+{% extends 'base.html' %}
+{% block title_suffix %} · Start{% endblock %}
+{% block content %}
+<div class="panel" data-animate>
+    <h2>Configure Your Quiz</h2>
+    <form class="song-form" action="/start-quiz" method="post">
+        <fieldset class="fieldset">
+            <span class="legend">Song Set</span>
+            <div class="radio-grid">
+                {% for name in song_lists %}
+                <div class="option">
+                    <input type="radio" id="{{ name }}" name="song_list" value="{{ name }}" {% if name == default_song_list %}checked{% endif %} required>
+                    <label for="{{ name }}">{{ name|replace('_',' ')|title }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </fieldset>
 
-        <h4>Year Range:</h4>
-        <label for="min_year">Minimum year:</label><br>
-        <input type="text" name="min_year" value="0"><br>
-        <label for="min_year">Maximum year:</label><br>
-        <input type="text" name="max_year" value="3000"><br>
+        <fieldset class="fieldset">
+            <span class="legend">Year Range</span>
+            <div class="range-inputs">
+                <div class="control">
+                    <label for="min_year">Minimum Year</label>
+                    <input type="text" id="min_year" name="min_year" value="0" placeholder="e.g. 1980" />
+                </div>
+                <div class="control">
+                    <label for="max_year">Maximum Year</label>
+                        <input type="text" id="max_year" name="max_year" value="3000" placeholder="e.g. 2024" />
+                </div>
+            </div>
+        </fieldset>
 
-        <h4>Other Options:</h4>
-        <input type="checkbox" name="repeats" value="repeats">
-        <label for="repeats"> Allow repeats?</label><br><br>
-        <button type="submit">Start Song Quiz!</button>
+        <fieldset class="fieldset">
+            <span class="legend">Other Options</span>
+            <div class="inline">
+                <input type="checkbox" id="repeats" name="repeats" value="repeats" />
+                <label for="repeats">Allow repeats?</label>
+            </div>
+        </fieldset>
+
+        <div>
+            <button type="submit" class="primary">Start Song Quiz</button>
+        </div>
     </form>
-</body>
+</div>
+{% endblock %}

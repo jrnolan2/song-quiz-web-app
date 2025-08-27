@@ -1,14 +1,20 @@
-<!DOCTYPE html>
-<head>
-    <title>Song Quiz</title>
-</head>
-<body>
-    <p>Song: {{song_name}}</p>
-    <p>Artist(s): {{song_artists}}</p>
-    <p>Year: {{song_year}}</p>
-    <a href="{{song_link}}" target="_blank">Song Link</a>
-    <br/><br/>
+{% extends 'base.html' %}
+{% block title_suffix %} · Song{% endblock %}
+{% block content %}
+<div class="panel song-card" data-animate>
+    <div class="song-meta">
+        <h2 class="song-title">{{ song_name }}</h2>
+        <p class="song-artist">{{ song_artists }}</p>
+        <p class="song-year">{{ song_year }}</p>
+    </div>
+    <div>
+        <a class="song-link" href="{{ song_link }}" target="_blank" rel="noopener noreferrer">▶ Open Song</a>
+    </div>
     <form action="/random-song" method="post">
         <button type="submit">Next Song</button>
     </form>
-</body>
+    <form action="/" method="get">
+        <button type="submit" style="--btn-bg:#334155;--btn-bg-hover:#475569;--btn-border:#475569;">New Quiz</button>
+    </form>
+</div>
+{% endblock %}
