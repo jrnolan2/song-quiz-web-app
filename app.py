@@ -26,12 +26,24 @@ def read_song_list_file(song_list_file):
     with open(song_list_file,encoding='utf-8') as f:
         song_lines = f.read().replace('\r','').split('\n')[1:]
         for song_line in song_lines:
-            song_line_parts = song_line.split('\t')
-            song_name = song_line_parts[0]
-            song_link = song_line_parts[1]
-            song_artist = song_line_parts[2]
-            song_year = int(song_line_parts[3])
-            song_list.append(Song(song_name,song_link,song_artist,song_year))
+            try:
+                song_line_parts = song_line.split('\t')
+                song_name = song_line_parts[0]
+                song_link = song_line_parts[1]
+                
+                if len(song_line_parts) > 2:
+                    song_artist = song_line_parts[2]
+                else:
+                    song_artist = "" # if no artist is provided
+
+                if len(song_line_parts) > 3:
+                    song_year = int(song_line_parts[3])
+                else:
+                    song_year = 0 # if no year provided, default to 0
+                
+                song_list.append(Song(song_name,song_link,song_artist,song_year))
+            except:
+                print(f"Error: could not parse line: {song_line}")
     return song_list
 
 def initialize_song_lists():
@@ -42,10 +54,14 @@ def initialize_song_lists():
     SONG_LISTS_DIRECTORY = 'song_lists'
 
     song_list_files = os.listdir(SONG_LISTS_DIRECTORY)
+    song_list_files = [f for f in song_list_files if f.endswith('.txt') or f.endswith('.tsv')]
     for song_list_file in song_list_files:
         print('Reading in file', song_list_file)
         song_list_file_name = song_list_file.split('.')[0]
-        song_lists_dict[song_list_file_name] = read_song_list_file(os.path.join(SONG_LISTS_DIRECTORY,song_list_file))
+        try:
+            song_lists_dict[song_list_file_name] = read_song_list_file(os.path.join(SONG_LISTS_DIRECTORY,song_list_file))
+        except:
+            print(f'Error: could not read file {song_list_file}')
 
 @app.route('/random-song', methods=['GET','POST'])
 def random_song_page():
