@@ -92,6 +92,8 @@ button:active, .btn:active { transform: translateY(0); filter: brightness(.95); 
 .song-title { font-size: 1.25rem; font-weight: 600; margin:0 0 .25rem; }
 .song-artist { margin:0 0 .35rem; color: var(--text-dim); font-weight:500; font-size:.9rem; }
 .song-year { font-size: .75rem; letter-spacing: .5px; text-transform: uppercase; color: var(--text-dim); margin: 0; }
+.local-audio { width: 100%; }
+.audio-missing { margin: 0; color: var(--danger); font-size: .85rem; }
 .song-link { font-size: .85rem; text-decoration: none; font-weight: 600; color: var(--accent-accent); display: inline-flex; gap: .4rem; align-items: center; }
 .song-link:hover { text-decoration: underline; }
 

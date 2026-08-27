@@ -1,12 +1,15 @@
-from flask import Flask, request, render_template
+from flask import Flask, abort, request, render_template, send_from_directory, url_for
 import os
 import random
+import re
 
 app = Flask(__name__)
 
 ALLOW_REPEATS = False
 song_lists_dict = {}
 curr_song_list = []
+curr_song_list_name = ''
+local_audio_enabled = False
 
 class Song:
     def __init__(self,name,link,artists,year):
@@ -14,6 +17,11 @@ class Song:
         self.link = link
         self.artists = artists
         self.year = year
+
+def clean_filename(filename: str) -> str:
+    """Return a filename that is safe to use across common operating systems."""
+    cleaned = re.sub(r'[\\/*?:"<>|]', "", filename)
+    return cleaned.strip(" .")
 
 def read_song_list_file(song_list_file):
     """
@@ -74,22 +82,52 @@ def random_song_page():
     if not ALLOW_REPEATS:
         curr_song_list.remove(random_song)
 
+    local_audio_url = None
+    local_audio_missing = False
+    if local_audio_enabled:
+        audio_filename = clean_filename(
+            f'{random_song.name} - {random_song.artists}'
+        ) + '.mp3'
+        audio_path = os.path.join(
+            'songs', curr_song_list_name, audio_filename
+        )
+        if os.path.isfile(audio_path):
+            local_audio_url = url_for(
+                'local_audio', song_list=curr_song_list_name,
+                filename=audio_filename
+            )
+        else:
+            local_audio_missing = True
+
     return render_template('random_song.html',
                            song_name=random_song.name,
                            song_artists=random_song.artists,
                            song_year=random_song.year,
-                           song_link=random_song.link)
+                           song_link=random_song.link,
+                           local_audio_enabled=local_audio_enabled,
+                           local_audio_url=local_audio_url,
+                           local_audio_missing=local_audio_missing)
+
+@app.route('/local-audio/<song_list>/<path:filename>')
+def local_audio(song_list, filename):
+    """Serve a downloaded ten-second clip from the selected song list."""
+    if song_list not in song_lists_dict:
+        abort(404)
+    return send_from_directory(
+        os.path.join('songs', song_list), filename, mimetype='audio/mpeg'
+    )
 
 @app.route('/start-quiz', methods=['POST'])
 def start_quiz():
     """
     Create the list of songs for the quiz based off user form values and start the quiz.
     """
-    global curr_song_list, ALLOW_REPEATS
+    global curr_song_list, curr_song_list_name, ALLOW_REPEATS, local_audio_enabled
 
     # Get all songs in selected song list
     song_list_name = request.form.get('song_list')
-    curr_song_list = song_lists_dict[song_list_name]
+    curr_song_list_name = song_list_name
+    curr_song_list = song_lists_dict[song_list_name].copy()
 
     # Filter songs released from min year to max year
     min_year = int(request.form.get('min_year'))
@@ -106,6 +144,8 @@ def start_quiz():
         ALLOW_REPEATS = False
     else:
         ALLOW_REPEATS = True
+
+    local_audio_enabled = request.form.get('local_audio') is not None
 
     return random_song_page()
 

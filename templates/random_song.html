@@ -7,8 +7,16 @@
         <p class="song-artist">{{ song_artists }}</p>
         <p class="song-year">{{ song_year }}</p>
     </div>
+    {% if local_audio_enabled and local_audio_url %}
+    <audio class="local-audio" controls autoplay preload="auto">
+        <source src="{{ local_audio_url }}" type="audio/mpeg">
+        Your browser does not support local audio playback.
+    </audio>
+    {% elif local_audio_missing %}
+    <p class="audio-missing">No downloaded clip was found for this song.</p>
+    {% endif %}
     <div>
-        <a class="song-link" href="{{ song_link }}" target="_blank" rel="noopener noreferrer">▶ Open Song</a>
+        <a class="song-link" href="{{ song_link }}" target="_blank" rel="noopener noreferrer">&#9654; Open YouTube Song</a>
     </div>
     <form action="/random-song" method="post">
         <button type="submit">Next Song</button>
