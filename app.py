@@ -2,6 +2,10 @@ from flask import Flask, abort, request, render_template, send_from_directory, u
 import os
 import random
 import re
+import hashlib
+
+from pydub import AudioSegment
+from pydub.generators import WhiteNoise
 
 app = Flask(__name__)
 
@@ -10,6 +14,13 @@ song_lists_dict = {}
 curr_song_list = []
 curr_song_list_name = ''
 local_audio_enabled = False
+audio_settings = {
+    'duration': 10.0,
+    'playback_rate': 1.0,
+    'reverse': False,
+    'static_level': 0,
+    'combine_count': 1,
+}
 
 class Song:
     def __init__(self,name,link,artists,year):
@@ -22,6 +33,50 @@ def clean_filename(filename: str) -> str:
     """Return a filename that is safe to use across common operating systems."""
     cleaned = re.sub(r'[\\/*?:"<>|]', "", filename)
     return cleaned.strip(" .")
+
+def local_audio_filename(song):
+    return clean_filename(f'{song.name} - {song.artists}') + '.mp3'
+
+def create_processed_audio(songs):
+    """Create one cached MP3 after applying the current effects to every song."""
+    source_names = [local_audio_filename(song) for song in songs]
+    cache_key = repr((curr_song_list_name, source_names, audio_settings)).encode()
+    output_name = hashlib.sha256(cache_key).hexdigest() + '.mp3'
+    output_directory = os.path.join('songs', 'generated')
+    output_path = os.path.join(output_directory, output_name)
+    if os.path.isfile(output_path):
+        return output_name
+
+    processed_segments = []
+    for song in songs:
+        source_path = os.path.join('songs', curr_song_list_name,
+                                   local_audio_filename(song))
+        if not os.path.isfile(source_path):
+            return None
+
+        segment = AudioSegment.from_file(source_path)
+        segment = segment[:int(audio_settings['duration'] * 1000)]
+        rate = audio_settings['playback_rate']
+        if rate != 1.0:
+            segment = segment._spawn(
+                segment.raw_data,
+                overrides={'frame_rate': int(segment.frame_rate * rate)}
+            ).set_frame_rate(segment.frame_rate)
+        if audio_settings['reverse']:
+            segment = segment.reverse()
+        static_level = audio_settings['static_level']
+        if static_level:
+            noise = WhiteNoise().to_audio_segment(duration=len(segment))
+            noise = noise - (60 - (static_level * 0.6))
+            segment = segment.overlay(noise)
+        processed_segments.append(segment)
+
+    combined = processed_segments[0]
+    for segment in processed_segments[1:]:
+        combined = combined.overlay(segment)
+    os.makedirs(output_directory, exist_ok=True)
+    combined.export(output_path, format='mp3')
+    return output_name
 
 def read_song_list_file(song_list_file):
     """
@@ -78,32 +133,36 @@ def random_song_page():
         # No songs left
         return render_template('no_songs_left.html')
 
-    random_song = random.choice(curr_song_list)
+    song_count = audio_settings['combine_count'] if local_audio_enabled else 1
+    if len(curr_song_list) < song_count:
+        return render_template('no_songs_left.html')
+    selected_songs = random.sample(curr_song_list, song_count)
     if not ALLOW_REPEATS:
-        curr_song_list.remove(random_song)
+        for song in selected_songs:
+            curr_song_list.remove(song)
 
     local_audio_url = None
     local_audio_missing = False
     if local_audio_enabled:
-        audio_filename = clean_filename(
-            f'{random_song.name} - {random_song.artists}'
-        ) + '.mp3'
-        audio_path = os.path.join(
-            'songs', curr_song_list_name, audio_filename
-        )
-        if os.path.isfile(audio_path):
+        audio_filename = create_processed_audio(selected_songs)
+        if audio_filename:
             local_audio_url = url_for(
-                'local_audio', song_list=curr_song_list_name,
+                'generated_audio',
                 filename=audio_filename
             )
         else:
             local_audio_missing = True
 
+    song_name = ' + '.join(song.name for song in selected_songs)
+    song_artists = ', '.join(song.artists for song in selected_songs)
+    song_links = [song.link for song in selected_songs]
+    song_year = ', '.join(str(song.year) for song in selected_songs)
+
     return render_template('random_song.html',
-                           song_name=random_song.name,
-                           song_artists=random_song.artists,
-                           song_year=random_song.year,
-                           song_link=random_song.link,
+                           song_name=song_name,
+                           song_artists=song_artists,
+                           song_year=song_year,
+                           song_links=song_links,
                            local_audio_enabled=local_audio_enabled,
                            local_audio_url=local_audio_url,
                            local_audio_missing=local_audio_missing)
@@ -116,6 +175,10 @@ def local_audio(song_list, filename):
     return send_from_directory(
         os.path.join('songs', song_list), filename, mimetype='audio/mpeg'
     )
+
+@app.route('/generated-audio/<path:filename>')
+def generated_audio(filename):
+    return send_from_directory('songs/generated', filename, mimetype='audio/mpeg')
 
 @app.route('/start-quiz', methods=['POST'])
 def start_quiz():
@@ -146,6 +209,30 @@ def start_quiz():
         ALLOW_REPEATS = True
 
     local_audio_enabled = request.form.get('local_audio') is not None
+    if local_audio_enabled:
+        try:
+            duration = float(request.form.get('audio_duration', 10))
+            playback_rate = float(request.form.get('playback_rate', 1))
+            static_level = int(request.form.get('static_level', 0))
+            combine_count = int(request.form.get('combine_count', 1))
+            if not 0 < duration <= 10 or not 0.25 <= playback_rate <= 4:
+                raise ValueError
+            if not 0 <= static_level <= 100 or not 1 <= combine_count <= 20:
+                raise ValueError
+            audio_settings.update({
+                'duration': duration,
+                'playback_rate': playback_rate,
+                'reverse': request.form.get('play_reverse') is not None,
+                'static_level': static_level,
+                'combine_count': combine_count,
+            })
+        except (TypeError, ValueError):
+            return 'Audio settings are invalid.', 400
+    else:
+        audio_settings.update({
+            'duration': 10.0, 'playback_rate': 1.0, 'reverse': False,
+            'static_level': 0, 'combine_count': 1,
+        })
 
     return random_song_page()
 

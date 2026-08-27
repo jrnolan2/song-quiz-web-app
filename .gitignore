@@ -1,3 +1,4 @@
 song_lists
 songs
 *.exe
+.venv

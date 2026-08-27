@@ -16,7 +16,9 @@
     <p class="audio-missing">No downloaded clip was found for this song.</p>
     {% endif %}
     <div>
-        <a class="song-link" href="{{ song_link }}" target="_blank" rel="noopener noreferrer">&#9654; Open YouTube Song</a>
+        {% for song_link in song_links %}
+        <a class="song-link" href="{{ song_link }}" target="_blank" rel="noopener noreferrer">&#9654; Open YouTube Song {{ loop.index }}</a>
+        {% endfor %}
     </div>
     <form action="/random-song" method="post">
         <button type="submit">Next Song</button>

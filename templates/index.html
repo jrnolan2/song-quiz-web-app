@@ -40,6 +40,30 @@
                 <input type="checkbox" id="local_audio" name="local_audio" value="local_audio" />
                 <label for="local_audio">Play local audio files</label>
             </div>
+            <div class="audio-settings" id="audio-settings">
+                <div class="range-inputs">
+                    <div class="control">
+                        <label for="audio_duration">Audio Length (seconds)</label>
+                        <input type="number" id="audio_duration" name="audio_duration" value="10" min="0.01" max="10" step="0.01" />
+                    </div>
+                    <div class="control">
+                        <label for="playback_rate">Playback Rate</label>
+                        <input type="number" id="playback_rate" name="playback_rate" value="1" min="0.25" max="4" step="0.05" />
+                    </div>
+                    <div class="control">
+                        <label for="static_level">Static (0-100)</label>
+                        <input type="number" id="static_level" name="static_level" value="0" min="0" max="100" step="1" />
+                    </div>
+                    <div class="control">
+                        <label for="combine_count">Songs Together</label>
+                        <input type="number" id="combine_count" name="combine_count" value="1" min="1" max="20" step="1" />
+                    </div>
+                </div>
+                <div class="inline">
+                    <input type="checkbox" id="play_reverse" name="play_reverse" value="play_reverse" />
+                    <label for="play_reverse">Play backwards</label>
+                </div>
+            </div>
         </fieldset>
 
         <div>
@@ -47,4 +71,11 @@
         </div>
     </form>
 </div>
+<script>
+    const localAudio = document.getElementById('local_audio');
+    const audioSettings = document.getElementById('audio-settings');
+    const updateAudioSettings = () => { audioSettings.hidden = !localAudio.checked; };
+    localAudio.addEventListener('change', updateAudioSettings);
+    updateAudioSettings();
+</script>
 {% endblock %}
